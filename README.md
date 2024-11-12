@@ -1,1 +1,1 @@
-# Terrafor Azure Dev Environment
+# Terraform Azure Dev Environment
