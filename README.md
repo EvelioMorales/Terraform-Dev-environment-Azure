@@ -17,10 +17,21 @@ This will serve as a remote Development Environment that can be remotely logged 
 
 It will also use Azure Custom Data and a provisioner that will bootstrap the virtual machine with Docker and add its connection information to VScode SSH file which will allow configuration for modification in future projects.
 
+# Initial Setup
 
-# Requirements 
+For this project I will be using VS Code as a code edditor with a terraform extension and Azure CLI installed to my machine. Once installed I will open up a new bash terminal and enter:
 
-* VSCode installed
-* Azure CLI installed
-* Terraform extension istalled
+```bash
+$ az login --use-device-code
+```
+That will give a link to a page and a code to enter on that page to login to azure through CLI.
+
+![Azure Login](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/loginAzure.png)
+
+Onece the code has been entered and subscription comfirmed I can get the projected started.
+
+![subscription comfirmed](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/Sub_Comfirm.png)
+
+
+
 
