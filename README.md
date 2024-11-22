@@ -30,10 +30,10 @@ That will give a link to a page and a code to enter on that page to login to azu
 
 Onece the code has been entered and subscription comfirmed I can get the projected started.
 
-![subscription comfirmed](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/Sub_Comfirm.png)
+![subscription comfirmed]()
 
 
 # Dev Environment
 
-While creating this project I will be using terraform [Azure Provider Documentation](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs) in order to user the correct configurations for the Dev environment. 
+While creating this project I will be using terraform [Azure Provider Documentation](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs) in order to use the correct configurations for the Dev environment. 
 
