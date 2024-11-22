@@ -33,5 +33,7 @@ Onece the code has been entered and subscription comfirmed I can get the project
 ![subscription comfirmed](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/Sub_Comfirm.png)
 
 
+# Dev Environment
 
+While creating this project I will be using terraform [Azure Provider Documentation](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs) in order to user the correct configurations for the Dev environment. 
 
