@@ -39,6 +39,8 @@ While creating this project I will be using terraform [Azure Provider Documentat
 
 ![Floder Created](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/1cjx3KcwI3.png)
 
+# Adding a Provider
+
 Now once the folder has been created I will create a file by hovering over the folder name in VS Code I will name the file *__main.tf__*. Now to add the first prot of the code and that is the provider I will be working on in this case Azure:
 
 ```terreform
@@ -65,7 +67,11 @@ terraform fmt
 ```bash
 terraform init
 ```
-This will initialize a local backend which will store the state in VS code. Next I will add a resource group that will have the name for the resource group, location of where the resource group will be deployed and any tag I would like to use for billing purposes:
+This will initialize a local backend which will store the state in VS code. 
+
+# Resource Group
+
+Next I will add a resource group that will have the name for the resource group, location of where the resource group will be deployed and any tag I would like to use for billing purposes:
 
 ```terraform
 resource "azurerm_resource_group" "mtc-rg" {
@@ -76,7 +82,12 @@ resource "azurerm_resource_group" "mtc-rg" {
   }
 }
 ```
-and in the terminal I will enter
+and in the terminal I will enter:
+
+```terraform
+terraform fmt
+```
+to clean up code, then:
 
 ```bash
 terraform plan
@@ -88,4 +99,53 @@ terraform apply
 # or
 terraform apply -auto-approve
 ```
-*__terraform apply__* will give me a review of what will be deployed and will ask to comfirm the deployment and *__terraform apply -auto-approve__* will auto approve the deployment without having to type in yes. Now I can go to azure and make sure that the resource is deployed. 
+*__"terraform apply"__* will give me a review of what will be deployed and will ask to comfirm the deployment and *__"terraform apply -auto-approve"__* will auto approve the deployment without having to type in yes. 
+
+![resource check](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/resource.png)
+Apply complete 
+
+And check in Azure under resource groups to verify the resource is created.
+
+![Resource in Azure](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/resource_in_azure.png)
+
+# Virtual Network 
+
+Now I will be adding a Virtual Network which will reference the resource group created.
+
+![Virtual Network](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/VirtualNet.png)
+
+Then clean up code, plan and apply 
+
+```terraform
+terraform fmt
+
+# next plan 
+terraform plan
+
+# next Apply
+terraform apply -auto-approve
+```
+
+Once I have comfirmation of the Virtual Network being deployed: 
+
+![Virtual Network Comfirmation](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/VirtualnetComfirmation.png)
+
+The following are State commands that can be ran after creating a new resource to verify the resource was created and to view the information on the resource created:
+
+```terraform
+# State list will show resources created
+terraform state list
+```
+![State List](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/statelist.png)
+
+```terraform
+# State show plus the receouce wanted to be viewed will show the information in the resourece
+terraform state show azurerm_virtual_network.mtc-vn
+```
+![State Show](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/stateshow.png)
+
+```terraform
+# Show will show all the resource information on all the resources created
+terraform show
+```
+![Show](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/show.png)
