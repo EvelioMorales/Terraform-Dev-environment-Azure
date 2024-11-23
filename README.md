@@ -130,7 +130,7 @@ Once I have comfirmation of the Virtual Network being deployed:
 
 ![Virtual Network Comfirmation](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/VirtualnetComfirmation.png)
 
-The following are State commands that can be ran after creating a new resource to verify the resource was created and to view the information on the resource created:
+I can check on the resources that have been deployed by going to Azure portal and viewing the resources or I can use *__State Commands__* .The following are State commands that can be ran after creating a new resource to verify the resource was created and to view the information on the resource created:
 
 ```terraform
 # State list will show resources created
@@ -149,3 +149,7 @@ terraform state show azurerm_virtual_network.mtc-vn
 terraform show
 ```
 ![Show](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/show.png)
+
+
+
+
