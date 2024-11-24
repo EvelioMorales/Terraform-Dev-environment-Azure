@@ -84,7 +84,7 @@ resource "azurerm_resource_group" "mtc-rg" {
 ```
 and in the terminal I will enter:
 
-```terraform
+```bash
 terraform fmt
 ```
 to clean up code, then:
@@ -116,7 +116,7 @@ Now I will be adding a Virtual Network which will reference the resource group c
 
 Then clean up code, plan and apply 
 
-```terraform
+```bash
 terraform fmt
 
 # next plan 
@@ -132,24 +132,147 @@ Once I have comfirmation of the Virtual Network being deployed:
 
 I can check on the resources that have been deployed by going to Azure portal and viewing the resources or I can use *__State Commands__* .The following are State commands that can be ran after creating a new resource to verify the resource was created and to view the information on the resource created:
 
-```terraform
+```bash
 # State list will show resources created
 terraform state list
 ```
 ![State List](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/statelist.png)
 
-```terraform
+```bash
 # State show plus the receouce wanted to be viewed will show the information in the resourece
 terraform state show azurerm_virtual_network.mtc-vn
 ```
 ![State Show](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/stateshow.png)
 
-```terraform
+```bash
 # Show will show all the resource information on all the resources created
 terraform show
 ```
 ![Show](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/show.png)
 
+# Subnet 
 
+Now I will be adding the subnet:
 
+```terraform
+resource "azurerm_subnet" "mtc-subnet" {
+  name                 = "mtc-subnet"
+  resource_group_name  = azurerm_resource_group.mtc-rg.name
+  virtual_network_name = azurerm_virtual_network.mtc-vn.name
+  address_prefixes     = ["10.123.1.0/24"]
+}
+```
+Once the subnet has been added I will run in the terminal:
 
+```bash
+# Format 
+terraform fmt
+# Plan
+terraform plan
+# Apply
+terraform apply -auto-approve
+# State List to verify
+terrraform state list
+```
+# Security Group & Security Rule
+
+Next I will be adding the security group and rule:
+
+```terraform
+resource "azurerm_network_security_group" "mtc-sg" {
+  name                = "mtc-sg"
+  location            = azurerm_resource_group.mtc-rg.location
+  resource_group_name = azurerm_resource_group.mtc-rg.name
+
+  tags = {
+    environment = "dev"
+  }
+}
+
+resource "azurerm_network_security_rule" "mtc-dev-rule" {
+  name                        = "mtc-dev-rule"
+  priority                    = 100
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "*"
+  source_address_prefix       = "*"
+  destination_address_prefix  = "*"
+  resource_group_name         = azurerm_resource_group.mtc-rg.name
+  network_security_group_name = azurerm_network_security_group.mtc-sg.name
+}
+```
+the security group must refrence the resource group location and name and the rule must refrence resource group and network security group. Once that is done I will run:
+
+```bash
+# Format 
+terraform fmt
+# Plan
+terraform plan
+# Apply
+terraform apply -auto-approve
+# State List to verify
+terrraform state list
+```
+to clean up, plan, apply and verify.
+
+# Security Group Association 
+
+Next I will associate the security group to the subnet in order to protect the subnet as well.
+
+```terraform
+resource "azurerm_subnet_network_security_group_association" "mtc-sga" {
+  subnet_id                 = azurerm_subnet.mtc-subnet.id
+  network_security_group_id = azurerm_network_security_group.mtc-sg.id
+}
+```
+I will make sure to refrence subnety and security group in the requested filed and clean up, plan, apply, and verify.
+
+```bash
+# Format 
+terraform fmt
+# Plan
+terraform plan
+# Apply
+terraform apply -auto-approve
+# State List to verify
+terrraform state list
+```
+
+# Public IP
+
+The next resource I will be adding will be a public IP:
+
+```terraform
+resource "azurerm_public_ip" "mtc-ip" {
+  name                = "mtc-ip"
+  resource_group_name = azurerm_resource_group.mtc-rg.name
+  location            = azurerm_resource_group.mtc-rg.location
+  allocation_method   = "Dynamic"
+
+  tags = {
+    environment = "dev"
+  }
+}
+```
+Then I will clean up, plan, apply and check the state:
+
+```bash
+# Format
+terraform fmt
+# Plan
+terraform plan
+# Apply 
+terraform apply -auto-approve
+```
+
+The Public IP will refrence resource group name and location, I have also used the allocation method as Dynamic. When setting it to Dynamic azure does not set up an IP address untill it is attaches to somthing and used. To check for the IP address I can run:
+
+```bash
+# State Show plu the information for the public IP resource 
+terraform state show azurerm_public_ip.mtc-ip
+```
+this will show that no IP address has been set.
+
+![IP No Show](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/IPNoShow.png)
