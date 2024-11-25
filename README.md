@@ -447,6 +447,95 @@ Docker version 27.3.1, build ce12230
 
 That indicates that the provisioner was added correctly.
 
-# Data Sources 
+# Data Sources & Output 
 
-I will be adding a data sourn ce to query the public IP to show hnopw it work
+I will be adding a data source to query the public IP address and pipe it to an Output.
+
+```terraform
+data "azurerm_public_ip" "mtc-ip-data" {
+    name = azurerm_public_ip.mtc-ip.name
+    resource_group_name = azurerm_resource_group.mtc-rg.name
+}
+```
+This will refrence the Public IP and resource group, now since the data source is not a resource it does not need to be applyed, but I will use the apply and refresh 
+
+```bash
+terraform apply -refresh-only
+```
+
+Click yes and to verify clion state and it will show the data source 
+
+![Data Source](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/datasource.png)
+
+Now let's add the Output to display information that is needed like the IP address this will save time by not having to manualy find trhe IP address.
+
+```terraform
+output "public_ip_address" {
+    value = "${azurerm_linux_virtual_machine.mtc-vm.name}: ${data.azurerm_public_ip.mtc-ip-data.ip_address}"
+}
+```
+
+To apply I will run a refresh 
+
+```bash
+terraform apply -refresh-only
+```
+
+Click yes to confirm the apply and to test we can run 
+
+```bash
+terraform output
+```
+![Output](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/output.png)
+The command will return the shown information.
+
+# Variables 
+
+Up to this point I have been hard coding ow it's time to start optimizing the script by adding __Variables__. One thig that might change if we move from station to station or computer to computer is the __Operating System__ so let's make it where I can dynamiclly choose the __Operating System__. Now to the __Provisioner__ I make a change 
+
+```terraform
+  # under "provisioner "local-exec" change windows
+    command = templatefile("windows-ssh-script.tpl"
+# To 
+command = templatefile("${var.host_os}-ssh-script.tpl"
+```
+
+Now I will create a __Variables__ file and add the following 
+
+```terraform
+variable "host_os" {
+  type = string
+}
+```
+Next file will be to default OS, create __terraform.tfvars__ and add 
+
+```terraform
+host_os = "windows"
+```
+Also I will create a file __osx.tfvars__
+
+```terraform
+host_os = "osx"
+```
+
+Lastly I will make the interpreter dynamiclly to be able to select __powershell__ or __bash__ by adding 
+
+```terraform
+# Change from this 
+interpreter = ["Powershell", "-Command"] 
+# To this 
+interpreter = var.host_os == "windows" ? ["Powershell", "-Command"] : ["bash", "-c"]
+```
+And run 
+
+```bash
+terraform apply -auto-approve
+```
+This finalize the creation of the Development Environment that can use as a base for future projects. Now we can't forget 
+
+```bash
+terraform destroy
+```
+To delete the project. 
+
+
