@@ -276,3 +276,68 @@ terraform state show azurerm_public_ip.mtc-ip
 this will show that no IP address has been set.
 
 ![IP No Show](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/IPNoShow.png)
+
+# Linux VM & SSH Key Pair
+
+Now I will be addin a linux virtual machine 
+
+![Linux VM](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/Linux.png)
+
+and next I will generate a key pair 
+
+```bash
+ssh-keygen -t rsa
+```
+ Then it will ask to enter file in which to save key and I will use the same location gived and rename the file as shown:
+
+ ![SSH Keygen](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/sshkeygen.png)
+
+ Once saved I will skip the passphrase and now I can make surre the ssh key was save by running 
+
+ ```bash
+ls ~/.ssh
+```
+That will show the file saved and now I can add the ssh key pair to the code 
+
+ ```terraform
+  admin_ssh_key {
+    username   = "adminuser"
+    public_key = file("C:/Users/user/.ssh/mtcazurekey.pub")
+  }
+```
+![SSH To Code](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/sshtocode.png)
+
+Now I can run 
+
+```bash
+terraform fmt
+terraform plan
+terraform apply -auto-approve
+```
+Now that it has been applyed I can ssh in to the instance by first getting the Public IP address
+
+```terraform
+# State lsit to show list of resources
+terraform state list
+# Show command plus VM info
+terraform state show azurerm_linux_virtual_machine.mtc-vm
+```
+![IP Address Copy](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/copyIP.png)
+
+Now that an IP address is showing I will copy the IP address and run 
+
+```bash
+ssh -i ~/.ssh/mtcazurekey adminuser@172.191.107.184
+```
+Once I am loged in to the instance i can verify by running
+
+```bash
+lsb_release -a
+```
+
+![instance confirmation](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/Instanceconfirm.png)
+
+This will show thew instance information and I'll jsut run exit to extix the instance.
+
+# 
+
