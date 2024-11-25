@@ -316,7 +316,7 @@ terraform apply -auto-approve
 ```
 Now that it has been applyed I can ssh in to the instance by first getting the Public IP address
 
-```terraform
+```bash
 # State lsit to show list of resources
 terraform state list
 # Show command plus VM info
@@ -339,5 +339,114 @@ lsb_release -a
 
 This will show thew instance information and I'll jsut run exit to extix the instance.
 
-# 
+# Custom Data
 
+Next I will be adding Custom Data to bootstrap the instance and install Docker engine. This will allow me to have a Linux VM instance deployed with Docker for all development needs. To start I will create a new file and name it *__customdata.tpl__* . I will save this in a template file just incase later I would like to add variables.
+
+![Custom Data](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/customdata.png)
+
+Once I have created the file I will add the shown script and save. Now I can add the custom data argument
+
+![Custom data argument](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/customdataargument.png)
+
+Now run clean up, plan, and apply 
+
+```bash
+terraform mft
+terraform plan
+terraform apply -auto-approve
+```
+
+Netx I will verify that Docker was installed by coppying the new IP address taht was generated do to a new instance that was created. 
+
+```bash
+# State list to get the VM information 
+terraform state lsit
+# State Show plus VM information
+terraform state show
+# Once new IP address is copyed run 
+ssh -i ~/.ssh/mtcazurekey adminuser@52.170.88.73
+
+# Once logged in to the instance
+docker --version
+```
+![Docker Version](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/Dockerversion.png)
+
+Once in the instance *__docker --version__* will show docker information. 
+
+# Remote SSH 
+
+Next I will be adding a remote ssh extension in VS Code that will open up a remote terminal in the VM, and add the configuration scripts to insert VM host information such as the IP address in to the ssh config file that VS Code will use to connect to those instances. 
+
+First I will install the __Remote SSH__ from the extensions tab. Once that is installed I will click on __View__ and open the __Command Palette__ and start typing __Remote SSH__ and selec __Remote SSH ADD New SSH Host__ then type in __ssh admin@admin.com__ and hit enter. It will show a few options and I will select the first one __ C:\Users\user\.ssh\config__ and click on the pop up window open config.
+
+The config file will show teh format that I will be using which will need Host, Host Name, User, and IdentityFile. I will need to extract that information from the instance.
+
+I will start by creating a new file and since I'm on Windows I will name it __windows-ssh-script.tpl__ and with in that file I will add the following script 
+
+```windows 
+add-content -path c:/Users/user/.ssh/config -value @'
+
+Host ${hostname}
+  HostName ${hostname}
+  User ${user}
+  IdentityFile ${identityfile}
+'@
+```
+
+I will also create a Lunix file incase I logg in with a Linux OS and I will name it __linux-ssh-script.tpl__
+
+```linux
+cat << EOF >> ~/.ssh/config
+
+Host ${hostname}
+  HostName ${hostname}
+  User ${user}
+  IdentityFile ${identityfile}
+EOF
+```
+
+The script are what will be used to add the information needed to ssh in to the remote VM.
+
+# Provisioner
+
+I will be using a provisioner now this is not optional if I would be configuring an instance but for this simple task it is perfect for configuration using user data custom data or ansible. Now I will add the following to VS Code in the same block of the instance. 
+
+```terraform
+provisioner "local-exec" {
+    command = templatefile("$windows-ssh-script.tpl", {
+      hostname     = self.public_ip_address,
+      user         = "adminuser",
+      identityfile = "~/.ssh/mtcazurekey"
+    })
+    interpreter = ["Powershell", "-Command"]
+  }
+```
+![Provisioner](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/provisioner.png)
+
+Once added if I run a *__terraform plan__* it will show that no changes are made since the state will not pick up the provisioner. In this case I will have to destroy the current VM and create a new one by replasing it which is also call tainting.
+
+```bash
+# State list to get the VM info
+terraform state list
+# Copy teh VM info and Apply
+terrafrom apply -replace azurerm_linux_virtual_machine.mtc-vm
+```
+
+Once the replace command is ran type in yes to apply the actions and tha VM will be destroyed and a new one created with the new configuration. To verify that it has worked I will click on __View__ and select __Command Palette__ selcet __Remote SSH Connect to Host__ and selct IP address. If done correct a new VS Code window will open and I will select lilnux, continue and open up a new terminal. 
+
+![Remote Window](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/remotewindow.png)
+
+Run the following to verify that Dcker is installed 
+
+```bash
+docker --version
+# a similar confirmation should show
+Docker version 27.3.1, build ce12230
+```
+
+That indicates that the provisioner was added correctly.
+
+# Data Sources 
+
+I will be adding a data sourn ce to query the public IP to show hnopw it work
