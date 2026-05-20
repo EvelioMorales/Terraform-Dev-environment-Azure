@@ -1,54 +1,180 @@
-# Terraform Azure Dev Environment
+# Azure Remote Development Environment with Terraform, Docker, and VS Code SSH
 
-In the following project, I will set up a Development environment with Terraform in Azure. I will be using VS code to deploy:
+## Project Overview
 
-* Azure Linux machine
-* Virtual network
-* Subnets
-* Security groups ect.
+This project provisions a remote Linux-based development environment in Microsoft Azure using Terraform.
 
-This will serve as a remote Development Environment that can be remotely logged into from VS code. This project will show how to use different tools and functions in Terraform such as:
+The environment includes:
 
-* Terraform state
-* Terraform fmt (format)
-* Terraform console
-* variables
-* conditionals and more...
+- Azure Resource Group
+- Virtual Network
+- Subnet
+- Network Security Group
+- Public IP Address
+- Linux Virtual Machine
+- SSH key-based authentication
+- Docker installation through Azure Custom Data
+- VS Code Remote SSH configuration
+- Terraform variables, outputs, and state management
 
-It will also use Azure Custom Data and a provisioner that will bootstrap the virtual machine with Docker and add its connection information to VScode SSH file which will allow configuration for modification in future projects.
+The purpose of this project is to demonstrate Infrastructure as Code skills by automating the deployment of a reusable cloud development workstation.
 
-# Initial Setup
+---
 
-For this project I will be using VS Code as a code edditor with a terraform extension and Azure CLI installed to my machine. Once installed I will open up a new bash terminal and enter:
+## Real-World Scenario
+
+A development or cloud support team may need a standardized remote development environment that can be quickly deployed, accessed securely, and destroyed when no longer needed.
+
+This project simulates that use case by using Terraform to deploy an Azure Linux VM that can be accessed remotely through SSH and VS Code Remote SSH.
+
+---
+
+## Technologies Used
+
+- Microsoft Azure
+- Terraform
+- Azure CLI
+- Azure Virtual Machines
+- Azure Virtual Network
+- Azure Network Security Groups
+- SSH
+- VS Code Remote SSH
+- Docker
+- Linux
+- PowerShell
+- Bash
+
+---
+
+## Skills Demonstrated
+
+- Infrastructure as Code with Terraform
+- Azure resource provisioning
+- Linux VM administration
+- SSH key-based authentication
+- Network security group configuration
+- Docker installation automation
+- Terraform variables and outputs
+- Terraform state inspection
+- VS Code Remote SSH configuration
+- Cloud development environment design
+- Basic cloud security hardening
+
+---
+
+## Architecture Summary
+
+The Terraform configuration deploys the following Azure resources:
+
+1. Resource Group
+2. Virtual Network
+3. Subnet
+4. Network Security Group
+5. Network Security Group Association
+6. Public IP Address
+7. Network Interface
+8. Linux Virtual Machine
+9. Custom Data script to install Docker
+10. Local SSH configuration for VS Code Remote SSH
+
+### Logical Architecture
+
+```text
+Developer Laptop
+      |
+      | SSH / VS Code Remote SSH
+      |
+Public IP Address
+      |
+Network Security Group
+      |
+Azure Linux Virtual Machine
+      |
+Docker Development Environment
+````
+
+---
+
+## Repository Structure
+
+```text
+Terraform-Dev-environment-Azure/
+│
+├── main.tf
+├── providers.tf
+├── variables.tf
+├── outputs.tf
+├── networking.tf
+├── compute.tf
+├── security.tf
+├── customdata.tpl
+├── windows-ssh-script.tpl
+├── linux-ssh-script.tpl
+├── terraform.tfvars.example
+├── .gitignore
+└── README.md
+```
+
+---
+
+## Prerequisites
+
+Before deploying this project, install the following tools:
+
+* [Terraform](https://developer.hashicorp.com/terraform/downloads)
+* [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
+* [Visual Studio Code](https://code.visualstudio.com/)
+* VS Code Terraform Extension
+* VS Code Remote SSH Extension
+* Git Bash, PowerShell, or a Linux terminal
+
+You also need:
+
+* An active Azure subscription
+* SSH installed locally
+* Permission to create Azure resources
+
+---
+
+## Initial Azure Login
+
+Open a terminal in VS Code and log in to Azure using the Azure CLI:
 
 ```bash
-$ az login --use-device-code
+az login --use-device-code
 ```
-That will give a link to a page and a code to enter on that page to login to azure through CLI.
+
+Azure will provide:
+
+* A device login URL
+* A temporary login code
+
+After entering the code and signing in, confirm that the correct Azure subscription is selected.
 
 ![Azure Login](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/loginAzure.png)
 
-Onece the code has been entered and subscription comfirmed I can get the projected started.
+![Subscription Confirmed](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/Sub_Comfirm.png)
 
-![subscription comfirmed](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/Sub_Comfirm.png)
+---
 
+## Terraform Provider Configuration
 
-# Dev Environment
+Create a file named:
 
-While creating this project I will be using terraform [Azure Provider Documentation](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs) in order to use the correct configurations for the Dev environment. I'll start off by creating a folder to save the configurations for this project.
+```text
+providers.tf
+```
 
-![Floder Created](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/1cjx3KcwI3.png)
+Add the AzureRM provider configuration:
 
-# Adding a Provider
-
-Now once the folder has been created I will create a file by hovering over the folder name in VS Code I will name the file *__main.tf__*. Now to add the first prot of the code and that is the provider I will be working on in this case Azure:
-
-```terreform
+```terraform
 terraform {
+  required_version = ">= 1.6.0"
+
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "3.0.0"
+      version = "~> 4.0"
     }
   }
 }
@@ -57,198 +183,222 @@ provider "azurerm" {
   features {}
 }
 ```
-Once I have added the provider required information I will run in the terminal:
 
-```bash
-terraform fmt
-```
-*__terraform fmt__* = terrafarm format will clean up the code by removing indentations and lining up the code to make it look organized. This is a good habit to do after adding code and before commiting to a repository. Then I will run:
+Initialize Terraform:
 
 ```bash
 terraform init
 ```
-This will initialize a local backend which will store the state in VS code. 
 
-# Resource Group
+Format the Terraform code:
 
-Next I will add a resource group that will have the name for the resource group, location of where the resource group will be deployed and any tag I would like to use for billing purposes:
+```bash
+terraform fmt
+```
+
+---
+
+## Resource Group
+
+Create a file named:
+
+```text
+main.tf
+```
+
+Add the Azure resource group:
 
 ```terraform
-resource "azurerm_resource_group" "mtc-rg" {
+resource "azurerm_resource_group" "mtc_rg" {
   name     = "mtc-resources"
-  location = "East US"
+  location = var.location
+
   tags = {
     environment = "dev"
   }
 }
 ```
-and in the terminal I will enter:
+
+Run:
 
 ```bash
 terraform fmt
-```
-to clean up code, then:
-
-```bash
 terraform plan
+terraform apply
 ```
-which will give me a plan of the resorces that will be deployed in azure which I can review and make sure everything is correct and then run:
+
+Or use:
 
 ```bash
-terraform apply
-# or
 terraform apply -auto-approve
 ```
-*__"terraform apply"__* will give me a review of what will be deployed and will ask to comfirm the deployment and *__"terraform apply -auto-approve"__* will auto approve the deployment without having to type in yes. 
 
-![resource check](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/resource.png)
-Apply complete 
+> Note: `terraform apply` allows you to review the deployment before confirming.
+> `terraform apply -auto-approve` deploys without asking for confirmation.
 
-And check in Azure under resource groups to verify the resource is created.
+![Resource Group Created](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/resource.png)
+
+Verify the resource group in the Azure Portal.
 
 ![Resource in Azure](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/resource_in_azure.png)
 
-# Virtual Network 
+---
 
-Now I will be adding a Virtual Network which will reference the resource group created.
+## Networking Configuration
 
-![Virtual Network](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/VirtualNet.png)
+Create a file named:
 
-Then clean up code, plan and apply 
-
-```bash
-terraform fmt
-
-# next plan 
-terraform plan
-
-# next Apply
-terraform apply -auto-approve
+```text
+networking.tf
 ```
 
-Once I have comfirmation of the Virtual Network being deployed: 
-
-![Virtual Network Comfirmation](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/VirtualnetComfirmation.png)
-
-I can check on the resources that have been deployed by going to Azure portal and viewing the resources or I can use *__State Commands__* .The following are State commands that can be ran after creating a new resource to verify the resource was created and to view the information on the resource created:
-
-```bash
-# State list will show resources created
-terraform state list
-```
-![State List](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/statelist.png)
-
-```bash
-# State show plus the receouce wanted to be viewed will show the information in the resourece
-terraform state show azurerm_virtual_network.mtc-vn
-```
-![State Show](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/stateshow.png)
-
-```bash
-# Show will show all the resource information on all the resources created
-terraform show
-```
-![Show](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/show.png)
-
-# Subnet 
-
-Now I will be adding the subnet:
+Add the virtual network and subnet:
 
 ```terraform
-resource "azurerm_subnet" "mtc-subnet" {
-  name                 = "mtc-subnet"
-  resource_group_name  = azurerm_resource_group.mtc-rg.name
-  virtual_network_name = azurerm_virtual_network.mtc-vn.name
-  address_prefixes     = ["10.123.1.0/24"]
-}
-```
-Once the subnet has been added I will run in the terminal:
-
-```bash
-# Format 
-terraform fmt
-# Plan
-terraform plan
-# Apply
-terraform apply -auto-approve
-# State List to verify
-terrraform state list
-```
-# Security Group & Security Rule
-
-Next I will be adding the security group and rule:
-
-```terraform
-resource "azurerm_network_security_group" "mtc-sg" {
-  name                = "mtc-sg"
-  location            = azurerm_resource_group.mtc-rg.location
-  resource_group_name = azurerm_resource_group.mtc-rg.name
+resource "azurerm_virtual_network" "mtc_vn" {
+  name                = "mtc-network"
+  address_space       = ["10.123.0.0/16"]
+  location            = azurerm_resource_group.mtc_rg.location
+  resource_group_name = azurerm_resource_group.mtc_rg.name
 
   tags = {
     environment = "dev"
   }
 }
 
-resource "azurerm_network_security_rule" "mtc-dev-rule" {
-  name                        = "mtc-dev-rule"
+resource "azurerm_subnet" "mtc_subnet" {
+  name                 = "mtc-subnet"
+  resource_group_name  = azurerm_resource_group.mtc_rg.name
+  virtual_network_name = azurerm_virtual_network.mtc_vn.name
+  address_prefixes     = ["10.123.1.0/24"]
+}
+```
+
+Run:
+
+```bash
+terraform fmt
+terraform plan
+terraform apply -auto-approve
+```
+
+![Virtual Network](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/VirtualNet.png)
+
+![Virtual Network Confirmation](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/VirtualnetComfirmation.png)
+
+---
+
+## Terraform State Commands
+
+Terraform state can be used to verify and inspect deployed resources.
+
+List resources in state:
+
+```bash
+terraform state list
+```
+
+![Terraform State List](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/statelist.png)
+
+Show details for the virtual network:
+
+```bash
+terraform state show azurerm_virtual_network.mtc_vn
+```
+
+![Terraform State Show](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/stateshow.png)
+
+Show all deployed infrastructure information:
+
+```bash
+terraform show
+```
+
+![Terraform Show](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/show.png)
+
+---
+
+## Network Security Group
+
+Create a file named:
+
+```text
+security.tf
+```
+
+Add the Network Security Group:
+
+```terraform
+resource "azurerm_network_security_group" "mtc_sg" {
+  name                = "mtc-sg"
+  location            = azurerm_resource_group.mtc_rg.location
+  resource_group_name = azurerm_resource_group.mtc_rg.name
+
+  tags = {
+    environment = "dev"
+  }
+}
+```
+
+---
+
+## Secure SSH Rule
+
+For security, inbound access should be restricted to SSH only.
+
+Instead of allowing all TCP ports from every source, this project allows SSH traffic only from a trusted public IP address.
+
+```terraform
+resource "azurerm_network_security_rule" "allow_ssh" {
+  name                        = "allow-ssh"
   priority                    = 100
   direction                   = "Inbound"
   access                      = "Allow"
   protocol                    = "Tcp"
   source_port_range           = "*"
-  destination_port_range      = "*"
-  source_address_prefix       = "*"
+  destination_port_range      = "22"
+  source_address_prefix       = var.my_public_ip
   destination_address_prefix  = "*"
-  resource_group_name         = azurerm_resource_group.mtc-rg.name
-  network_security_group_name = azurerm_network_security_group.mtc-sg.name
+  resource_group_name         = azurerm_resource_group.mtc_rg.name
+  network_security_group_name = azurerm_network_security_group.mtc_sg.name
 }
 ```
-the security group must refrence the resource group location and name and the rule must refrence resource group and network security group. Once that is done I will run:
 
-```bash
-# Format 
-terraform fmt
-# Plan
-terraform plan
-# Apply
-terraform apply -auto-approve
-# State List to verify
-terrraform state list
-```
-to clean up, plan, apply and verify.
+> Security Note: Avoid using `source_address_prefix = "*"` for SSH access in real environments. Restrict SSH access to your trusted public IP address whenever possible.
 
-# Security Group Association 
+---
 
-Next I will associate the security group to the subnet in order to protect the subnet as well.
+## Associate NSG to Subnet
+
+Associate the Network Security Group with the subnet:
 
 ```terraform
-resource "azurerm_subnet_network_security_group_association" "mtc-sga" {
-  subnet_id                 = azurerm_subnet.mtc-subnet.id
-  network_security_group_id = azurerm_network_security_group.mtc-sg.id
+resource "azurerm_subnet_network_security_group_association" "mtc_sga" {
+  subnet_id                 = azurerm_subnet.mtc_subnet.id
+  network_security_group_id = azurerm_network_security_group.mtc_sg.id
 }
 ```
-I will make sure to refrence subnety and security group in the requested filed and clean up, plan, apply, and verify.
+
+Run:
 
 ```bash
-# Format 
 terraform fmt
-# Plan
 terraform plan
-# Apply
 terraform apply -auto-approve
-# State List to verify
-terrraform state list
+terraform state list
 ```
 
-# Public IP
+---
 
-The next resource I will be adding will be a public IP:
+## Public IP Address
+
+Add a public IP address for the virtual machine:
 
 ```terraform
-resource "azurerm_public_ip" "mtc-ip" {
+resource "azurerm_public_ip" "mtc_ip" {
   name                = "mtc-ip"
-  resource_group_name = azurerm_resource_group.mtc-rg.name
-  location            = azurerm_resource_group.mtc-rg.location
+  resource_group_name = azurerm_resource_group.mtc_rg.name
+  location            = azurerm_resource_group.mtc_rg.location
   allocation_method   = "Dynamic"
 
   tags = {
@@ -256,135 +406,282 @@ resource "azurerm_public_ip" "mtc-ip" {
   }
 }
 ```
-Then I will clean up, plan, apply and check the state:
+
+Run:
 
 ```bash
-# Format
 terraform fmt
-# Plan
 terraform plan
-# Apply 
 terraform apply -auto-approve
 ```
 
-The Public IP will refrence resource group name and location, I have also used the allocation method as Dynamic. When setting it to Dynamic azure does not set up an IP address untill it is attaches to somthing and used. To check for the IP address I can run:
+Check the public IP state:
 
 ```bash
-# State Show plu the information for the public IP resource 
-terraform state show azurerm_public_ip.mtc-ip
+terraform state show azurerm_public_ip.mtc_ip
 ```
-this will show that no IP address has been set.
 
-![IP No Show](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/IPNoShow.png)
+![Public IP State](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/IPNoShow.png)
 
-# Linux VM & SSH Key Pair
+> Note: A dynamic public IP may not show an assigned address until it is attached to a network interface and used by the VM.
 
-Now I will be addin a linux virtual machine 
+---
+
+## Network Interface
+
+Add a network interface for the VM:
+
+```terraform
+resource "azurerm_network_interface" "mtc_nic" {
+  name                = "mtc-nic"
+  location            = azurerm_resource_group.mtc_rg.location
+  resource_group_name = azurerm_resource_group.mtc_rg.name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.mtc_subnet.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.mtc_ip.id
+  }
+
+  tags = {
+    environment = "dev"
+  }
+}
+```
+
+---
+
+## Generate SSH Key Pair
+
+Generate an SSH key pair for secure VM access.
+
+Recommended command:
+
+```bash
+ssh-keygen -t ed25519 -C "azure-dev-environment"
+```
+
+If using RSA:
+
+```bash
+ssh-keygen -t rsa -b 4096
+```
+
+When prompted, save the key in your `.ssh` directory.
+
+Example:
+
+```text
+C:\Users\user\.ssh\mtcazurekey
+```
+
+Verify that the key was created:
+
+```bash
+ls ~/.ssh
+```
+
+![SSH Key Generation](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/sshkeygen.png)
+
+> Security Note: In a production environment, SSH private keys should be protected with a passphrase and stored securely.
+
+---
+
+## Linux Virtual Machine
+
+Create a file named:
+
+```text
+compute.tf
+```
+
+Add the Linux virtual machine:
+
+```terraform
+resource "azurerm_linux_virtual_machine" "mtc_vm" {
+  name                = "mtc-vm"
+  resource_group_name = azurerm_resource_group.mtc_rg.name
+  location            = azurerm_resource_group.mtc_rg.location
+  size                = "Standard_B1s"
+  admin_username      = "adminuser"
+
+  network_interface_ids = [
+    azurerm_network_interface.mtc_nic.id
+  ]
+
+  admin_ssh_key {
+    username   = "adminuser"
+    public_key = file(var.ssh_public_key_path)
+  }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "Standard_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
+  }
+
+  custom_data = filebase64("customdata.tpl")
+
+  tags = {
+    environment = "dev"
+  }
+}
+```
 
 ![Linux VM](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/Linux.png)
 
-and next I will generate a key pair 
-
-```bash
-ssh-keygen -t rsa
-```
- Then it will ask to enter file in which to save key and I will use the same location gived and rename the file as shown:
-
- ![SSH Keygen](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/sshkeygen.png)
-
- Once saved I will skip the passphrase and now I can make surre the ssh key was save by running 
-
- ```bash
-ls ~/.ssh
-```
-That will show the file saved and now I can add the ssh key pair to the code 
-
- ```terraform
-  admin_ssh_key {
-    username   = "adminuser"
-    public_key = file("C:/Users/user/.ssh/mtcazurekey.pub")
-  }
-```
-![SSH To Code](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/sshtocode.png)
-
-Now I can run 
+Run:
 
 ```bash
 terraform fmt
 terraform plan
 terraform apply -auto-approve
 ```
-Now that it has been applyed I can ssh in to the instance by first getting the Public IP address
+
+---
+
+## SSH into the Virtual Machine
+
+Get the public IP address:
 
 ```bash
-# State lsit to show list of resources
-terraform state list
-# Show command plus VM info
-terraform state show azurerm_linux_virtual_machine.mtc-vm
+terraform output
 ```
-![IP Address Copy](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/copyIP.png)
 
-Now that an IP address is showing I will copy the IP address and run 
+Or inspect the VM state:
+
+```bash
+terraform state show azurerm_linux_virtual_machine.mtc_vm
+```
+
+SSH into the VM:
+
+```bash
+ssh -i ~/.ssh/mtcazurekey adminuser@<public-ip-address>
+```
+
+Example:
 
 ```bash
 ssh -i ~/.ssh/mtcazurekey adminuser@172.191.107.184
 ```
-Once I am loged in to the instance i can verify by running
+
+Verify the operating system:
 
 ```bash
 lsb_release -a
 ```
 
-![instance confirmation](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/Instanceconfirm.png)
+![Instance Confirmation](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/Instanceconfirm.png)
 
-This will show thew instance information and I'll jsut run exit to extix the instance.
+Exit the VM:
 
-# Custom Data
+```bash
+exit
+```
 
-Next I will be adding Custom Data to bootstrap the instance and install Docker engine. This will allow me to have a Linux VM instance deployed with Docker for all development needs. To start I will create a new file and name it *__customdata.tpl__* . I will save this in a template file just incase later I would like to add variables.
+---
+
+## Custom Data: Install Docker
+
+Create a file named:
+
+```text
+customdata.tpl
+```
+
+Add the following bootstrap script:
+
+```bash
+#!/bin/bash
+
+sudo apt-get update -y
+sudo apt-get install -y ca-certificates curl gnupg lsb-release
+
+sudo install -m 0755 -d /etc/apt/keyrings
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | \
+sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt-get update -y
+
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+sudo usermod -aG docker adminuser
+```
+
+This script installs Docker when the VM is created.
 
 ![Custom Data](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/customdata.png)
 
-Once I have created the file I will add the shown script and save. Now I can add the custom data argument
+![Custom Data Argument](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/customdataargument.png)
 
-![Custom data argument](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/customdataargument.png)
-
-Now run clean up, plan, and apply 
+Apply the configuration:
 
 ```bash
-terraform mft
+terraform fmt
 terraform plan
 terraform apply -auto-approve
 ```
 
-Netx I will verify that Docker was installed by coppying the new IP address taht was generated do to a new instance that was created. 
+SSH into the VM and verify Docker:
 
 ```bash
-# State list to get the VM information 
-terraform state lsit
-# State Show plus VM information
-terraform state show
-# Once new IP address is copyed run 
-ssh -i ~/.ssh/mtcazurekey adminuser@52.170.88.73
-
-# Once logged in to the instance
 docker --version
 ```
+
 ![Docker Version](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/Dockerversion.png)
 
-Once in the instance *__docker --version__* will show docker information. 
+---
 
-# Remote SSH 
+## VS Code Remote SSH Setup
 
-Next I will be adding a remote ssh extension in VS Code that will open up a remote terminal in the VM, and add the configuration scripts to insert VM host information such as the IP address in to the ssh config file that VS Code will use to connect to those instances. 
+Install the **Remote SSH** extension in VS Code.
 
-First I will install the __Remote SSH__ from the extensions tab. Once that is installed I will click on __View__ and open the __Command Palette__ and start typing __Remote SSH__ and selec __Remote SSH ADD New SSH Host__ then type in __ssh admin@admin.com__ and hit enter. It will show a few options and I will select the first one __ C:\Users\user\.ssh\config__ and click on the pop up window open config.
+Steps:
 
-The config file will show teh format that I will be using which will need Host, Host Name, User, and IdentityFile. I will need to extract that information from the instance.
+1. Open VS Code.
+2. Go to **Extensions**.
+3. Search for **Remote SSH**.
+4. Install the extension.
+5. Open the Command Palette.
+6. Select **Remote-SSH: Add New SSH Host**.
+7. Add your SSH connection string.
 
-I will start by creating a new file and since I'm on Windows I will name it __windows-ssh-script.tpl__ and with in that file I will add the following script 
+Example:
 
-```windows 
+```bash
+ssh -i ~/.ssh/mtcazurekey adminuser@<public-ip-address>
+```
+
+---
+
+## Windows SSH Script Template
+
+Create a file named:
+
+```text
+windows-ssh-script.tpl
+```
+
+Add:
+
+```powershell
 add-content -path c:/Users/user/.ssh/config -value @'
 
 Host ${hostname}
@@ -394,9 +691,19 @@ Host ${hostname}
 '@
 ```
 
-I will also create a Lunix file incase I logg in with a Linux OS and I will name it __linux-ssh-script.tpl__
+---
 
-```linux
+## Linux SSH Script Template
+
+Create a file named:
+
+```text
+linux-ssh-script.tpl
+```
+
+Add:
+
+```bash
 cat << EOF >> ~/.ssh/config
 
 Host ${hostname}
@@ -406,136 +713,333 @@ Host ${hostname}
 EOF
 ```
 
-The script are what will be used to add the information needed to ssh in to the remote VM.
+These templates automatically add SSH host information to your local SSH config file.
 
-# Provisioner
+---
 
-I will be using a provisioner now this is not optional if I would be configuring an instance but for this simple task it is perfect for configuration using user data custom data or ansible. Now I will add the following to VS Code in the same block of the instance. 
+## Terraform Provisioner
+
+A Terraform `local-exec` provisioner can be used to automatically update the local SSH config file.
+
+Add this inside the `azurerm_linux_virtual_machine` resource block:
 
 ```terraform
 provisioner "local-exec" {
-    command = templatefile("$windows-ssh-script.tpl", {
-      hostname     = self.public_ip_address,
-      user         = "adminuser",
-      identityfile = "~/.ssh/mtcazurekey"
-    })
-    interpreter = ["Powershell", "-Command"]
-  }
+  command = templatefile("${var.host_os}-ssh-script.tpl", {
+    hostname     = self.public_ip_address,
+    user         = "adminuser",
+    identityfile = var.ssh_private_key_path
+  })
+
+  interpreter = var.host_os == "windows" ? ["PowerShell", "-Command"] : ["bash", "-c"]
+}
 ```
+
+> Note: This project uses a Terraform provisioner for convenience. In production environments, configuration management tools such as Ansible, cloud-init, or Azure VM extensions may be preferred.
+
 ![Provisioner](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/provisioner.png)
 
-Once added if I run a *__terraform plan__* it will show that no changes are made since the state will not pick up the provisioner. In this case I will have to destroy the current VM and create a new one by replasing it which is also call tainting.
+If the VM already exists, replace it so the provisioner runs again:
 
 ```bash
-# State list to get the VM info
 terraform state list
-# Copy teh VM info and Apply
-terrafrom apply -replace azurerm_linux_virtual_machine.mtc-vm
+terraform apply -replace="azurerm_linux_virtual_machine.mtc_vm"
 ```
 
-Once the replace command is ran type in yes to apply the actions and tha VM will be destroyed and a new one created with the new configuration. To verify that it has worked I will click on __View__ and select __Command Palette__ selcet __Remote SSH Connect to Host__ and selct IP address. If done correct a new VS Code window will open and I will select lilnux, continue and open up a new terminal. 
+After replacement, connect using VS Code Remote SSH.
 
 ![Remote Window](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/remotewindow.png)
 
-Run the following to verify that Dcker is installed 
+Verify Docker again:
 
 ```bash
 docker --version
-# a similar confirmation should show
+```
+
+Example output:
+
+```text
 Docker version 27.3.1, build ce12230
 ```
 
-That indicates that the provisioner was added correctly.
+---
 
-# Data Sources & Output 
+## Data Source and Output
 
-I will be adding a data source to query the public IP address and pipe it to an Output.
+Add a data source to query the public IP address:
 
 ```terraform
-data "azurerm_public_ip" "mtc-ip-data" {
-    name = azurerm_public_ip.mtc-ip.name
-    resource_group_name = azurerm_resource_group.mtc-rg.name
+data "azurerm_public_ip" "mtc_ip_data" {
+  name                = azurerm_public_ip.mtc_ip.name
+  resource_group_name = azurerm_resource_group.mtc_rg.name
 }
 ```
-This will refrence the Public IP and resource group, now since the data source is not a resource it does not need to be applyed, but I will use the apply and refresh 
+
+Run:
 
 ```bash
 terraform apply -refresh-only
 ```
-
-Click yes and to verify clion state and it will show the data source 
 
 ![Data Source](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/datasource.png)
 
-Now let's add the Output to display information that is needed like the IP address this will save time by not having to manualy find trhe IP address.
+---
+
+## Outputs
+
+Create a file named:
+
+```text
+outputs.tf
+```
+
+Add:
 
 ```terraform
 output "public_ip_address" {
-    value = "${azurerm_linux_virtual_machine.mtc-vm.name}: ${data.azurerm_public_ip.mtc-ip-data.ip_address}"
+  value = "${azurerm_linux_virtual_machine.mtc_vm.name}: ${data.azurerm_public_ip.mtc_ip_data.ip_address}"
+}
+
+output "ssh_connection_command" {
+  value = "ssh -i ${var.ssh_private_key_path} adminuser@${data.azurerm_public_ip.mtc_ip_data.ip_address}"
 }
 ```
 
-To apply I will run a refresh 
+Apply refresh:
 
 ```bash
 terraform apply -refresh-only
 ```
 
-Click yes to confirm the apply and to test we can run 
+View outputs:
 
 ```bash
 terraform output
 ```
-![Output](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/output.png)
-The command will return the shown information.
 
-# Variables 
+![Terraform Output](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/output.png)
 
-Up to this point I have been hard coding ow it's time to start optimizing the script by adding __Variables__. One thig that might change if we move from station to station or computer to computer is the __Operating System__ so let's make it where I can dynamiclly choose the __Operating System__. Now to the __Provisioner__ I make a change 
+---
 
-```terraform
-  # under "provisioner "local-exec" change windows
-    command = templatefile("windows-ssh-script.tpl"
-# To 
-command = templatefile("${var.host_os}-ssh-script.tpl"
+## Variables
+
+Create a file named:
+
+```text
+variables.tf
 ```
 
-Now I will create a __Variables__ file and add the following 
+Add:
 
 ```terraform
+variable "location" {
+  description = "Azure region where resources will be deployed"
+  type        = string
+  default     = "East US"
+}
+
 variable "host_os" {
-  type = string
+  description = "Local operating system used for SSH config script"
+  type        = string
+}
+
+variable "my_public_ip" {
+  description = "Trusted public IP address allowed to SSH into the VM"
+  type        = string
+}
+
+variable "ssh_public_key_path" {
+  description = "Path to the SSH public key"
+  type        = string
+}
+
+variable "ssh_private_key_path" {
+  description = "Path to the SSH private key"
+  type        = string
 }
 ```
-Next file will be to default OS, create __terraform.tfvars__ and add 
+
+---
+
+## Terraform Variables Example
+
+Create a file named:
+
+```text
+terraform.tfvars.example
+```
+
+Add:
 
 ```terraform
-host_os = "windows"
+location             = "East US"
+host_os              = "windows"
+my_public_ip         = "YOUR_PUBLIC_IP/32"
+ssh_public_key_path  = "C:/Users/user/.ssh/mtcazurekey.pub"
+ssh_private_key_path = "~/.ssh/mtcazurekey"
 ```
-Also I will create a file __osx.tfvars__
+
+Create your real local file:
+
+```text
+terraform.tfvars
+```
+
+Example:
 
 ```terraform
-host_os = "osx"
+location             = "East US"
+host_os              = "windows"
+my_public_ip         = "123.123.123.123/32"
+ssh_public_key_path  = "C:/Users/user/.ssh/mtcazurekey.pub"
+ssh_private_key_path = "~/.ssh/mtcazurekey"
 ```
 
-Lastly I will make the interpreter dynamiclly to be able to select __powershell__ or __bash__ by adding 
+> Important: Do not upload your real `terraform.tfvars` file to GitHub if it contains your IP address, usernames, or sensitive values.
 
-```terraform
-# Change from this 
-interpreter = ["Powershell", "-Command"] 
-# To this 
-interpreter = var.host_os == "windows" ? ["Powershell", "-Command"] : ["bash", "-c"]
-```
-And run 
+---
 
-```bash
-terraform apply -auto-approve
+## .gitignore
+
+Create a `.gitignore` file:
+
+```gitignore
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
 ```
-This finalize the creation of the Development Environment that can use as a base for future projects. Now we can't forget 
+
+This helps prevent sensitive Terraform files from being uploaded to GitHub.
+
+---
+
+## Validation
+
+The deployment was validated using the following checks:
+
+| Test                       | Command                                           | Expected Result                |
+| -------------------------- | ------------------------------------------------- | ------------------------------ |
+| Verify Terraform resources | `terraform state list`                            | Azure resources are listed     |
+| Verify public IP output    | `terraform output`                                | Public IP address is displayed |
+| Test SSH access            | `ssh -i ~/.ssh/mtcazurekey adminuser@<public-ip>` | Successful login               |
+| Verify Linux OS            | `lsb_release -a`                                  | Linux version is displayed     |
+| Verify Docker installation | `docker --version`                                | Docker version is returned     |
+| Verify VS Code Remote SSH  | Connect through VS Code                           | Remote terminal opens          |
+
+---
+
+## Security Improvements Added
+
+This project includes several important security improvements:
+
+* SSH access restricted to a trusted public IP address
+* SSH key-based authentication instead of password login
+* Network Security Group associated with the subnet
+* Sensitive Terraform variable values excluded from GitHub
+* `.gitignore` added to protect Terraform state files
+* Security note added for SSH private key protection
+
+---
+
+## Cost Management
+
+This project uses Azure resources that may create charges.
+
+To avoid unnecessary Azure costs, destroy the infrastructure after testing:
 
 ```bash
 terraform destroy
 ```
-To delete the project. 
 
+Confirm the destruction by checking:
 
+```bash
+terraform state list
+```
+
+You can also verify in the Azure Portal that the resource group has been removed.
+
+---
+
+## Cleanup
+
+Destroy all deployed resources:
+
+```bash
+terraform destroy
+```
+
+Type:
+
+```text
+yes
+```
+
+when prompted.
+
+---
+
+## Lessons Learned
+
+Through this project, I learned how to use Terraform to provision and manage Azure infrastructure.
+
+I also gained hands-on experience with:
+
+* Azure CLI authentication
+* Terraform provider configuration
+* Resource groups
+* Virtual networks
+* Subnets
+* Network Security Groups
+* Linux virtual machines
+* SSH key authentication
+* Docker installation automation
+* Terraform variables and outputs
+* Terraform state inspection
+* VS Code Remote SSH access
+
+This project helped strengthen my understanding of Infrastructure as Code and cloud-based development environments.
+
+---
+
+## Future Improvements
+
+Potential improvements for this project include:
+
+* Store Terraform state in an Azure Storage Account backend
+* Add Azure Bastion to remove direct public SSH exposure
+* Store SSH keys in Azure Key Vault
+* Add Azure Monitor and Log Analytics
+* Add GitHub Actions for Terraform plan and apply
+* Convert the configuration into reusable Terraform modules
+* Add separate dev, test, and production workspaces
+* Add Docker container deployment after VM creation
+* Add Ansible for post-deployment configuration management
+
+---
+
+## Conclusion
+
+This project demonstrates how Terraform can be used to deploy a remote development environment in Microsoft Azure.
+
+By provisioning Azure networking, security, compute, SSH access, Docker installation, and VS Code Remote SSH integration, this project shows a practical Infrastructure as Code workflow for creating reusable cloud development environments.
+
+This project highlights skills relevant to:
+
+* Cloud Engineering
+* DevOps Support
+* Infrastructure Automation
+* Technical Support
+* Linux Administration
+* Azure Administration
+* Site Reliability Engineering
+
+```
+```
