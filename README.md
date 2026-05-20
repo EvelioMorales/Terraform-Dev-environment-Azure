@@ -1,3 +1,6 @@
+![Main Pic](https://github.com/EvelioMorales/Terraform-Dev-environment-Azure/blob/main/AzureDev.png)
+
+
 # Azure Remote Development Environment with Terraform, Docker, and VS Code SSH
 
 ## Project Overview
@@ -1031,15 +1034,3 @@ This project demonstrates how Terraform can be used to deploy a remote developme
 
 By provisioning Azure networking, security, compute, SSH access, Docker installation, and VS Code Remote SSH integration, this project shows a practical Infrastructure as Code workflow for creating reusable cloud development environments.
 
-This project highlights skills relevant to:
-
-* Cloud Engineering
-* DevOps Support
-* Infrastructure Automation
-* Technical Support
-* Linux Administration
-* Azure Administration
-* Site Reliability Engineering
-
-```
-```
